@@ -1,0 +1,11 @@
+steps:
+  # Build the image that lives in docker/images/n8n
+  - name: gcr.io/cloud-builders/docker
+    env: ['DOCKER_BUILDKIT=1']        # <-- turns on BuildKit, so --mount works
+    dir: docker/images/n8n            # Dockerfile is here
+    args: ['build',
+           '-t', 'gcr.io/$PROJECT_ID/n8n:$SHORT_SHA',
+           '.']
+
+images:
+  - 'gcr.io/$PROJECT_ID/n8n:$SHORT_SHA'
