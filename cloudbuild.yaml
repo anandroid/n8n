@@ -1,21 +1,24 @@
 steps:
+  # 1. Build *and* push in the same command (needs BuildKit)
   - name: gcr.io/cloud-builders/docker
-    env: ['DOCKER_BUILDKIT=1']          # BuildKit needed for the --mount lines :contentReference[oaicite:0]{index=0}
-    # Build context is the repo root (.), but Dockerfile is in the sub-dir
+    env: ['DOCKER_BUILDKIT=1']
     args: [
-      'build',
-      '-f', 'docker/images/n8n/Dockerfile',
-      '-t', 'gcr.io/$PROJECT_ID/n8n:$SHORT_SHA',
+      'buildx','build',
+      '--platform=linux/amd64',
+      '--push',                        # <-- pushes right away
+      '-f','docker/images/n8n/Dockerfile',
+      '-t','gcr.io/$PROJECT_ID/n8n:$SHORT_SHA',
       '.'
     ]
 
-  # (optional) deploy to Cloud Run
+  # 2. Deploy only after the image is in the registry
   - name: gcr.io/cloud-builders/gcloud
+    id: deploy
+    waitFor: ['-']                     # waits for every previous step
     args: [
       'run','deploy','n8n',
       '--image','gcr.io/$PROJECT_ID/n8n:$SHORT_SHA',
-      '--region','us-central1','--platform','managed','--quiet'
+      '--region','us-central1',
+      '--platform','managed',
+      '--quiet'
     ]
-
-images:
-  - 'gcr.io/$PROJECT_ID/n8n:$SHORT_SHA'
